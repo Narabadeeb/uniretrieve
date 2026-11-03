@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <title>UniRetrieve - แจ้งเตือน</title>
+  <style>
+    body { font-family: sans-serif; max-width: 500px; margin: 30px auto; padding: 20px; }
+    #status { padding: 8px 12px; border-radius: 8px; background: #eee; margin-bottom: 16px; }
+    .noti { background: #e7f6ed; border: 1px solid #1f9d55; border-radius: 10px; padding: 12px; margin-bottom: 10px; }
+  </style>
+</head>
+<body>
+  <h2>🔔 แจ้งเตือนของหาย-เจอ</h2>
+  <div id="status">กำลังเชื่อมต่อ...</div>
+  <div id="list"></div>
+
+  <script src="http://localhost:3003/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io("http://localhost:3003");
+
+    socket.on("connect", () => {
+      document.getElementById("status").innerText = "🟢 เชื่อมต่อแล้ว รอรับแจ้งเตือน...";
+    });
+
+    socket.on("match-notification", (data) => {
+      const card = document.createElement("div");
+      card.className = "noti";
+      card.innerText = "🎉 จับคู่สำเร็จ! \"" + data.newItem.name + "\" ตรงกับ " + data.matches.length + " รายการ";
+      document.getElementById("list").prepend(card);
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>UniRetrieve</title>
+<script src="http://localhost:3003/socket.io/socket.io.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: "Sarabun", "Noto Sans Thai", system-ui, sans-serif; background: #f4f6fb; color: #1f2937; padding-bottom: 80px; }
+  header { background: #2563eb; color: #fff; padding: 18px 16px 14px; position: sticky; top: 0; z-index: 10; }
+  header h1 { font-size: 20px; margin-bottom: 10px; }
+  #search { width: 100%; padding: 10px 14px; border: none; border-radius: 10px; font-size: 15px; font-family: inherit; }
+  .tabs { display: flex; gap: 8px; overflow-x: auto; padding: 12px 16px 4px; }
+  .tab { border: 1px solid #cbd5e1; background: #fff; padding: 6px 14px; border-radius: 999px; font-size: 14px; cursor: pointer; white-space: nowrap; font-family: inherit; }
+  .tab.active { background: #2563eb; color: #fff; border-color: #2563eb; }
+  #list { padding: 12px 16px; display: grid; gap: 12px; max-width: 720px; margin: 0 auto; }
+  .card { background: #fff; border-radius: 14px; padding: 14px; box-shadow: 0 1px 4px rgba(0,0,0,.08); }
+  .card-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+  .card h3 { font-size: 16px; }
+  .meta { font-size: 13px; color: #6b7280; margin-top: 6px; line-height: 1.6; }
+  .badge { font-size: 12px; padding: 3px 10px; border-radius: 999px; white-space: nowrap; font-weight: 600; }
+  .lost { background: #fee2e2; color: #b91c1c; }
+  .found { background: #dcfce7; color: #15803d; }
+  .returned { background: #e5e7eb; color: #4b5563; }
+  .empty { text-align: center; color: #9ca3af; padding: 40px 0; }
+  #toast-box { position: fixed; top: 12px; left: 50%; transform: translateX(-50%); z-index: 50; width: calc(100% - 32px); max-width: 420px; display: grid; gap: 8px; }
+  .toast { background: #16a34a; color: #fff; padding: 12px 14px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,.2); font-size: 14px; }
+  nav { position: fixed; bottom: 0; left: 0; right: 0; background: #fff; border-top: 1px solid #e5e7eb; display: flex; }
+  nav button { flex: 1; padding: 12px 0 10px; border: none; background: none; font-size: 12px; color: #6b7280; cursor: pointer; font-family: inherit; }
+  nav button.active { color: #2563eb; font-weight: 700; }
+  nav .ico { display: block; font-size: 20px; }
+  #report { display: none; padding: 16px; max-width: 720px; margin: 0 auto; }
+  #report label { display: block; font-size: 14px; margin: 12px 0 4px; }
+  #report input, #report select { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 10px; font-size: 15px; font-family: inherit; }
+  #report button { margin-top: 18px; width: 100%; padding: 12px; background: #2563eb; color: #fff; border: none; border-radius: 10px; font-size: 16px; cursor: pointer; font-family: inherit; }
+  #conn { font-size: 12px; margin-top: 8px; opacity: .9; }
+</style>
+</head>
+<body>
+
+<div id="toast-box"></div>
+
+<header>
+  <h1>🎓 UniRetrieve</h1>
+  <input id="search" type="search" placeholder="ค้นหาสิ่งของ...">
+  <div id="conn">⚪ กำลังเชื่อมต่อแจ้งเตือน...</div>
+</header>
+
+<div id="home-search">
+  <div class="tabs" id="tabs"></div>
+  <div id="list"></div>
+</div>
+
+<div id="report">
+  <h2>แจ้งของหาย / ของเจอ</h2>
+  <label>ชื่อสิ่งของ</label>
+  <input id="f-name" placeholder="เช่น กระเป๋าสตางค์สีดำ">
+  <label>หมวดหมู่</label>
+  <select id="f-category">
+    <option>อุปกรณ์ไฟฟ้า</option>
+    <option>กระเป๋าสตางค์</option>
+    <option>เอกสาร</option>
+    <option>อื่นๆ</option>
+  </select>
+  <label>สถานที่</label>
+  <input id="f-location" placeholder="เช่น อาคาร 5 ชั้น 2">
+  <label>สถานะ</label>
+  <select id="f-status">
+    <option value="lost">หาย</option>
+    <option value="found">พบแล้ว</option>
+  </select>
+  <button id="submit">โพสต์รายการ</button>
+</div>
+
+<nav>
+  <button data-page="home" class="active"><span class="ico">🏠</span>Home</button>
+  <button data-page="search"><span class="ico">🔍</span>Search</button>
+  <button data-page="report"><span class="ico">➕</span>Report</button>
+</nav>
+
+<script>
+const ITEM_API = "http://localhost:3002";
+const NOTI_API = "http://localhost:3003";
+
+let items = [];
+let activeCategory = "ทั้งหมด";
+let keyword = "";
+
+const STATUS = {
+  lost:     { text: "หาย",     cls: "lost" },
+  found:    { text: "พบแล้ว",  cls: "found" },
+  returned: { text: "คืนแล้ว", cls: "returned" }
+};
+
+function esc(s) {
+  const d = document.createElement("div");
+  d.textContent = s ?? "";
+  return d.innerHTML;
+}
+
+async function loadItems() {
+  try {
+    const res = await fetch(ITEM_API + "/items");
+    items = await res.json();
+    render();
+  } catch (e) {
+    document.getElementById("list").innerHTML =
+      '<div class="empty">เชื่อมต่อ item-service ไม่ได้ (เช็คว่ารันที่ port 3002)</div>';
+  }
+}
+
+function renderTabs() {
+  const cats = ["ทั้งหมด", ...new Set(items.map(i => i.category).filter(Boolean))];
+  document.getElementById("tabs").innerHTML = cats.map(c =>
+    `<button class="tab ${c === activeCategory ? "active" : ""}" data-cat="${esc(c)}">${esc(c)}</button>`
+  ).join("");
+}
+
+function render() {
+  renderTabs();
+  const shown = items
+    .filter(i => activeCategory === "ทั้งหมด" || i.category === activeCategory)
+    .filter(i => !keyword || (i.name || "").toLowerCase().includes(keyword))
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+  document.getElementById("list").innerHTML = shown.length
+    ? shown.map(i => {
+        const st = STATUS[i.status] || { text: i.status, cls: "returned" };
+        const d = new Date(i.createdAt).toLocaleString("th-TH", { dateStyle: "medium", timeStyle: "short" });
+        return `<div class="card">
+          <div class="card-top"><h3>${esc(i.name)}</h3><span class="badge ${st.cls}">${st.text}</span></div>
+          <div class="meta">📍 ${esc(i.location)}<br>🏷️ ${esc(i.category)}<br>🕒 ${d}</div>
+        </div>`;
+      }).join("")
+    : '<div class="empty">ไม่พบรายการ</div>';
+}
+
+document.getElementById("tabs").addEventListener("click", e => {
+  const b = e.target.closest(".tab");
+  if (!b) return;
+  activeCategory = b.dataset.cat;
+  render();
+});
+
+document.getElementById("search").addEventListener("input", e => {
+  keyword = e.target.value.trim().toLowerCase();
+  render();
+});
+
+function showPage(page) {
+  const isReport = page === "report";
+  document.getElementById("report").style.display = isReport ? "block" : "none";
+  document.getElementById("home-search").style.display = isReport ? "none" : "block";
+  document.querySelectorAll("nav button").forEach(b => b.classList.toggle("active", b.dataset.page === page));
+  if (page === "search") document.getElementById("search").focus();
+  if (!isReport) loadItems();
+}
+document.querySelectorAll("nav button").forEach(b => b.addEventListener("click", () => showPage(b.dataset.page)));
+
+document.getElementById("submit").addEventListener("click", async () => {
+  const body = {
+    name: document.getElementById("f-name").value.trim(),
+    category: document.getElementById("f-category").value,
+    location: document.getElementById("f-location").value.trim(),
+    status: document.getElementById("f-status").value
+  };
+  if (!body.name || !body.location) return alert("กรอกชื่อและสถานที่ก่อนนะ");
+  try {
+    const res = await fetch(ITEM_API + "/items", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body)
+    });
+    if (!res.ok) throw new Error();
+    document.getElementById("f-name").value = "";
+    document.getElementById("f-location").value = "";
+    showPage("home");
+  } catch (e) {
+    alert("โพสต์ไม่สำเร็จ เช็ค item-service");
+  }
+});
+
+function toast(msg) {
+  const el = document.createElement("div");
+  el.className = "toast";
+  el.textContent = msg;
+  document.getElementById("toast-box").appendChild(el);
+  setTimeout(() => el.remove(), 60000);
+}
+
+const socket = io(NOTI_API);
+socket.on("connect", () => document.getElementById("conn").textContent = "🟢 เชื่อมต่อแจ้งเตือนแล้ว");
+socket.on("disconnect", () => document.getElementById("conn").textContent = "🔴 หลุดการเชื่อมต่อ");
+
+// ชื่อ event ต้องตรงกับที่ notification-service ใช้ io.emit(...)
+// ถ้าของคุณใช้ชื่ออื่น (เช่น "notification") ให้แก้ตรงนี้
+socket.on("match-notification", data => {
+  const name = data.newItem ? data.newItem.name : "รายการใหม่";
+  const count = data.matches ? data.matches.length : 0;
+  toast("🎉 จับคู่สำเร็จ! \"" + name + "\" ตรงกับ " + count + " รายการ");
+  loadItems();
+});
+
+loadItems();
+</script>
+</body>
+</html>

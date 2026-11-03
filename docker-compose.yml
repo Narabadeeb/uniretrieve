@@ -1,0 +1,64 @@
+services:
+  mysql:
+    image: mysql:8
+    environment:
+      MYSQL_ROOT_PASSWORD: uniretrieve123
+      MYSQL_DATABASE: uniretrieve
+    ports:
+      - "3310:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-puniretrieve123"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "5673:5672"
+      - "15673:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+
+  item-service:
+    build: ./item-service
+    ports:
+      - "3002:3002"
+    environment:
+      DB_HOST: mysql
+      DB_PORT: 3306
+      RABBITMQ_URL: amqp://rabbitmq:5672
+    depends_on:
+      mysql:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  match-service:
+    build: ./match-service
+    environment:
+      RABBITMQ_URL: amqp://rabbitmq:5672
+      ITEM_SERVICE_URL: http://item-service:3002
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      item-service:
+        condition: service_started
+
+  notification-service:
+    build: ./notification-service
+    ports:
+      - "3003:3003"
+    environment:
+      RABBITMQ_URL: amqp://rabbitmq:5672
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+
+volumes:
+  mysql_data:
