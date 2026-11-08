@@ -9,7 +9,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-mongoose.connect("mongodb://localhost:27017/uniretrieve")
+mongoose.connect(process.env.MONGO_URL || "mongodb://localhost:27017/uniretrieve")
   .then(() => {
     console.log("auth-service: เชื่อมต่อ MongoDB สำเร็จ!");
   })
@@ -26,7 +26,7 @@ app.post("/register", async (req, res) => {
       password: hashedPassword
     });
     await newUser.save();
-    res.status(201).json({ message: "สมัครสมาชิกสำเร็จ", user: newUser });
+    res.status(201).json({ message: "สมัครสมาชิกสำเร็จ", user: { id: newUser._id, name: newUser.name, email: newUser.email } });
   } catch (error) {
     res.status(400).json({ message: "เกิดข้อผิดพลาด", error: error.message });
   }
@@ -44,7 +44,7 @@ app.post("/login", async (req, res) => {
     }
     const token = jwt.sign(
       { userId: user._id, email: user.email },
-      "mysecretkey123",
+      process.env.JWT_SECRET || "mysecretkey123",
       { expiresIn: "7d" }
     );
     res.status(200).json({ message: "เข้าสู่ระบบสำเร็จ", token: token });
