@@ -1,3 +1,9 @@
+require("dotenv").config();
+
+if (!process.env.JWT_SECRET) {
+  console.error("ไม่พบ JWT_SECRET ใน .env");
+  process.exit(1);
+}
 const express = require("express");
 const cors = require("cors");
 const mongoose = require("mongoose");
@@ -44,7 +50,7 @@ app.post("/login", async (req, res) => {
     }
     const token = jwt.sign(
       { userId: user._id, email: user.email },
-      process.env.JWT_SECRET || "mysecretkey123",
+      process.env.JWT_SECRET,
       { expiresIn: "7d" }
     );
     res.status(200).json({ message: "เข้าสู่ระบบสำเร็จ", token: token });
