@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+﻿import { useCallback, useEffect, useRef, useState } from "react";
 import { Routes, Route, Link, useNavigate } from "react-router-dom";
 import { Backpack, Bell, Search, User, ArrowUpDown, CircleCheck } from "lucide-react";
 import { getItems } from "./api";
@@ -135,7 +135,7 @@ function Home() {
 
         {user ? (
           <>
-            <span style={{ fontSize: 14, whiteSpace: "nowrap" }}>{user.name}</span>
+            <span style={{ fontSize: 14, whiteSpace: "nowrap" }}>{user.email}</span>
             <button className="icon-btn" onClick={logout} style={{ width: "auto", padding: "0 14px" }}>
               ออกจากระบบ
             </button>

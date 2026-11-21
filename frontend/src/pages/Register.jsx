@@ -40,7 +40,7 @@ export default function Register() {
       <h2 style={{ margin: 0 }}>สมัครสมาชิก</h2>
       <input style={input} placeholder="ชื่อ-นามสกุล" value={name}
         onChange={(e) => setName(e.target.value)} required />
-      <input style={input} type="email" placeholder="รหัสนักศึกษา@spumail.net"
+      <input style={input} type="email" placeholder="อีเมลมหาวิทยาลัยศรีปทุม (เช่น @spumail.net)"
         value={email} onChange={(e) => setEmail(e.target.value)} required />
       <input style={input} type="password" placeholder="รหัสผ่าน (อย่างน้อย 8 ตัว)"
         value={password} onChange={(e) => setPassword(e.target.value)} required minLength={8} />
