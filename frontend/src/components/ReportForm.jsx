@@ -1,11 +1,11 @@
 import { useState } from "react";
-import { Frown, Smile, Send } from "lucide-react";
+import { Send } from "lucide-react";
 import { createItem } from "../api";
 import { CATEGORIES } from "../categories";
 
 const FORM_CATEGORIES = CATEGORIES.filter((c) => c.name !== "ทั้งหมด");
 
-export default function ReportForm({ type, onTypeChange, onDone }) {
+export default function ReportForm({ type, onDone }) {
   const [form, setForm] = useState({ name: "", category: FORM_CATEGORIES[0].name, location: "" });
   const [sending, setSending] = useState(false);
 
@@ -36,24 +36,7 @@ export default function ReportForm({ type, onTypeChange, onDone }) {
 
   return (
     <form id="report" onSubmit={handleSubmit}>
-      <h2>แจ้งของหาย / ของเจอ</h2>
-
-      <div className="type-toggle">
-        <button
-          type="button"
-          className={isLost ? "active lost" : ""}
-          onClick={() => onTypeChange("lost")}
-        >
-          <Frown size={20} /> แจ้งของหาย
-        </button>
-        <button
-          type="button"
-          className={!isLost ? "active found" : ""}
-          onClick={() => onTypeChange("found")}
-        >
-          <Smile size={20} /> แจ้งของเจอ
-        </button>
-      </div>
+      <h2>{isLost ? "แจ้งของหาย" : "แจ้งของเจอ"}</h2>
 
       <label>ชื่อสิ่งของ *</label>
       <input value={form.name} onChange={set("name")} placeholder="เช่น กระเป๋าสตางค์สีดำ" />

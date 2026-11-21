@@ -1,8 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { Routes, Route, Link } from "react-router-dom";
 import { Backpack, Bell, Search, User, ArrowUpDown, CircleCheck } from "lucide-react";
 import { getItems } from "./api";
 import { socket } from "./socket";
 import { CATEGORIES, normalizeCategory } from "./categories";
+import { useAuth } from "./AuthContext";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
 import ItemCard from "./components/ItemCard";
 import ReportForm from "./components/ReportForm";
 import Sidebar from "./components/Sidebar";
@@ -10,7 +14,7 @@ import BottomNav from "./components/BottomNav";
 
 const TOAST_MS = 10000;
 
-export default function App() {
+function Home() {
   const [page, setPage] = useState("home");
   const [reportType, setReportType] = useState("lost");
   const [items, setItems] = useState([]);
@@ -22,6 +26,7 @@ export default function App() {
   const [seenCount, setSeenCount] = useState(0);
   const [connected, setConnected] = useState(null);
   const searchRef = useRef(null);
+  const { user, logout } = useAuth();
 
   const loadItems = useCallback(async () => {
     try {
@@ -124,9 +129,19 @@ export default function App() {
           <Bell size={22} />
           {unread > 0 && <em className="count">{unread}</em>}
         </button>
-        <div className="avatar">
-          <User size={20} />
-        </div>
+
+        {user ? (
+          <>
+            <span style={{ fontSize: 14, whiteSpace: "nowrap" }}>{user.name}</span>
+            <button className="icon-btn" onClick={logout} style={{ width: "auto", padding: "0 14px" }}>
+              ออกจากระบบ
+            </button>
+          </>
+        ) : (
+          <Link to="/login" className="avatar" aria-label="เข้าสู่ระบบ">
+            <User size={20} />
+          </Link>
+        )}
       </header>
 
       <div className="layout">
@@ -207,5 +222,15 @@ export default function App() {
 
       <BottomNav page={page} onGo={goTo} onSearch={focusSearch} unread={unread} />
     </>
+  );
+}
+
+export default function App() {
+  return (
+    <Routes>
+      <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Register />} />
+      <Route path="/*" element={<Home />} />
+    </Routes>
   );
 }
