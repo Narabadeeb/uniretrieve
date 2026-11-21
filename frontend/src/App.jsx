@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Routes, Route, Link } from "react-router-dom";
+import { Routes, Route, Link, useNavigate } from "react-router-dom";
 import { Backpack, Bell, Search, User, ArrowUpDown, CircleCheck } from "lucide-react";
 import { getItems } from "./api";
 import { socket } from "./socket";
@@ -27,7 +27,7 @@ function Home() {
   const [connected, setConnected] = useState(null);
   const searchRef = useRef(null);
   const { user, logout } = useAuth();
-
+  const navigate = useNavigate();
   const loadItems = useCallback(async () => {
     try {
       setItems(await getItems());
@@ -66,8 +66,11 @@ function Home() {
       socket.off("match-notification", onMatch);
     };
   }, [loadItems]);
-
   function goTo(p, type) {
+    if (p === "report" && !user) {
+      navigate("/login");
+      return;
+    }
     if (page === "notifications") setSeenCount(notifs.length);
     setPage(p);
     if (type) setReportType(type);
@@ -89,7 +92,7 @@ function Home() {
 
   const connText =
     connected === null ? "กำลังเชื่อมต่อแจ้งเตือน..." :
-    connected ? "เชื่อมต่อแจ้งเตือนแล้ว" : "หลุดการเชื่อมต่อ";
+      connected ? "เชื่อมต่อแจ้งเตือนแล้ว" : "หลุดการเชื่อมต่อ";
   const dotCls = connected === null ? "" : connected ? "on" : "off";
 
   return (
