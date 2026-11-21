@@ -1,9 +1,30 @@
-﻿import { createContext, useContext, useState } from "react";
+﻿import { createContext, useContext, useEffect, useState } from "react";
 
 const AuthContext = createContext(null);
 export const useAuth = () => useContext(AuthContext);
 
 const AUTH_URL = "http://localhost:3001";
+
+async function callAuth(path, body) {
+  let res;
+  try {
+    res = await fetch(`${AUTH_URL}${path}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+  } catch {
+    throw new Error("ต่อ auth-service ไม่ได้ (เช็คว่ารัน node server.js ที่ port 3001)");
+  }
+  let data = {};
+  try {
+    data = await res.json();
+  } catch {
+    /* ignore */
+  }
+  if (!res.ok) throw new Error(data.message || "เกิดข้อผิดพลาด");
+  return data;
+}
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => {
@@ -15,24 +36,23 @@ export function AuthProvider({ children }) {
     }
   });
 
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+    fetch(`${AUTH_URL}/me`, { headers: { Authorization: `Bearer ${token}` } })
+      .then((r) => {
+        if (r.status === 401) logout();
+      })
+      .catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   async function register(name, email, password) {
-    const res = await fetch(`${AUTH_URL}/register`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, email, password }),
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.message || "สมัครไม่สำเร็จ");
+    await callAuth("/register", { name, email, password });
   }
 
   async function login(email, password) {
-    const res = await fetch(`${AUTH_URL}/login`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.message || "เข้าสู่ระบบไม่สำเร็จ");
+    const data = await callAuth("/login", { email: email.trim(), password });
     localStorage.setItem("token", data.token);
     localStorage.setItem("user", JSON.stringify(data.user));
     setUser(data.user);
