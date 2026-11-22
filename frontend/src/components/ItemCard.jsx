@@ -18,8 +18,12 @@ export default function ItemCard({ item }) {
 
   return (
     <article className="card">
-      <div className={`thumb ${st.cls}`}>
-        <Thumb size={34} />
+      <div className={`thumb ${st.cls}`} style={item.image ? { padding: 0, overflow: "hidden" } : undefined}>
+        {item.image ? (
+          <img src={item.image} alt={item.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+        ) : (
+          <Thumb size={34} />
+        )}
       </div>
       <div className="card-main">
         <h3>{item.name}</h3>

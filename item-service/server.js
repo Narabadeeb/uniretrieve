@@ -9,7 +9,7 @@ const PORT = process.env.PORT || 3002;
 
 const app = express();
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: "5mb" }));
 
 let channel = null;
 
@@ -35,7 +35,7 @@ async function connectRabbitMQ() {
 
 async function syncDatabase() {
   try {
-    await sequelize.sync();
+    await sequelize.sync({ alter: true });
     console.log("item-service: เชื่อมต่อ MySQL สำเร็จ!");
   } catch (error) {
     console.log("เชื่อมต่อ MySQL ไม่สำเร็จ:", error.message, "- ลองใหม่ใน 5 วินาที");
@@ -48,15 +48,23 @@ syncDatabase();
 
 app.post("/items", async (req, res) => {
   try {
+    let image = null;
+    if (typeof req.body.image === "string" && req.body.image.startsWith("data:image/")) {
+      image = req.body.image;
+    }
+
     const newItem = await Item.create({
       name: req.body.name,
       category: req.body.category,
       location: req.body.location,
-      status: req.body.status
+      status: req.body.status,
+      image
     });
 
     if (channel) {
-      channel.sendToQueue("item.created", Buffer.from(JSON.stringify(newItem)));
+      const forQueue = newItem.toJSON();
+      delete forQueue.image;
+      channel.sendToQueue("item.created", Buffer.from(JSON.stringify(forQueue)));
       console.log("ส่งข้อความเข้าคิว item.created:", newItem.name);
     }
 
