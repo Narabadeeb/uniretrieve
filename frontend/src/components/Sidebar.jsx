@@ -2,8 +2,8 @@ import { House, CirclePlus, Gift, Bell } from "lucide-react";
 
 const MENU = [
   { label: "หน้าหลัก", Icon: House, page: "home" },
-  { label: "แจ้งของหาย", Icon: CirclePlus, page: "report", type: "lost" },
-  { label: "แจ้งของเจอ", Icon: Gift, page: "report", type: "found" },
+  { label: "แจ้งของหาย", Icon: CirclePlus, page: "lost", type: "lost" },
+  { label: "แจ้งของเจอ", Icon: Gift, page: "found", type: "found" },
   { label: "การแจ้งเตือน", Icon: Bell, page: "notifications" },
 ];
 
@@ -12,7 +12,7 @@ export default function Sidebar({ page, reportType, onGo, unread }) {
     <aside className="sidebar">
       <nav className="side-nav">
         {MENU.map(({ label, Icon, page: p, type }) => {
-          const active = page === p && (!type || reportType === type);
+          const active = (page === p || (page === "report" && type)) && (!type || reportType === type);
           return (
             <button
               key={label}

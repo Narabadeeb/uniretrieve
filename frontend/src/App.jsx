@@ -1,4 +1,4 @@
-﻿import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Routes, Route, Link, useNavigate } from "react-router-dom";
 import { Backpack, Bell, Search, User, ArrowUpDown, CircleCheck } from "lucide-react";
 import { getItems } from "./api";
@@ -74,7 +74,7 @@ function Home() {
     if (page === "notifications") setSeenCount(notifs.length);
     setPage(p);
     if (type) setReportType(type);
-    if (p === "home") loadItems();
+    if (p !== "report" && p !== "notifications") loadItems();
   }
 
   function focusSearch() {
@@ -86,6 +86,7 @@ function Home() {
 
   const kw = keyword.trim().toLowerCase();
   const shown = items
+    .filter((i) => page === "home" || i.status === page)
     .filter((i) => category === "ทั้งหมด" || normalizeCategory(i.category) === category)
     .filter((i) => !kw || `${i.name || ""} ${i.location || ""}`.toLowerCase().includes(kw))
     .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
@@ -151,8 +152,17 @@ function Home() {
         <Sidebar page={page} reportType={reportType} onGo={goTo} unread={unread} />
 
         <main className="main">
-          {page === "home" && (
+          {(page === "home" || page === "lost" || page === "found") && (
             <>
+              {page !== "home" && (
+                <button
+                  className="submit"
+                  style={{ marginBottom: 12 }}
+                  onClick={() => goTo("report", page)}
+                >
+                  + {page === "lost" ? "แจ้งของหาย" : "แจ้งของเจอ"}
+                </button>
+              )}
               <section className="panel chips-panel">
                 <span className="chips-title">หมวดหมู่</span>
                 <div className="chips">
@@ -195,7 +205,7 @@ function Home() {
           )}
 
           {page === "report" && (
-            <ReportForm type={reportType} onTypeChange={setReportType} onDone={() => goTo("home")} />
+            <ReportForm type={reportType} onTypeChange={setReportType} onDone={() => goTo(reportType)} />
           )}
           {page === "notifications" && (
             <section>
