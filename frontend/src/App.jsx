@@ -11,6 +11,7 @@ import ItemCard from "./components/ItemCard";
 import ReportForm from "./components/ReportForm";
 import Sidebar from "./components/Sidebar";
 import BottomNav from "./components/BottomNav";
+import MailboxButton from "./components/MailboxButton";
 
 const TOAST_MS = 10000;
 
@@ -155,13 +156,10 @@ function Home() {
           {(page === "home" || page === "lost" || page === "found") && (
             <>
               {page !== "home" && (
-                <button
-                  className="submit"
-                  style={{ marginBottom: 12 }}
+                <MailboxButton
+                  label={page === "lost" ? "แจ้งของหาย" : "แจ้งของเจอ"}
                   onClick={() => goTo("report", page)}
-                >
-                  + {page === "lost" ? "แจ้งของหาย" : "แจ้งของเจอ"}
-                </button>
+                />
               )}
               <section className="panel chips-panel">
                 <span className="chips-title">หมวดหมู่</span>

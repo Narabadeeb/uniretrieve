@@ -183,3 +183,37 @@ button { cursor: pointer; }
   .card-side { grid-column: 2 / 3; grid-row: 2; display: flex; width: 100%; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px; }
   .badge { padding: 5px 12px; font-size: 13px; }
 }
+/* ---------- ปุ่มตู้จดหมาย ---------- */
+.mailbox-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 14px;
+  padding: 10px 22px 10px 14px;
+  border: none;
+  border-radius: 18px;
+  background: #fff;
+  color: #3730a3;
+  font-size: 16px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.2);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.mailbox-btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 26px rgba(99, 102, 241, 0.32);
+}
+.mailbox-btn:active { transform: translateY(0); }
+.mailbox-btn .flag {
+  transform-origin: 46px 34px;
+  transform: rotate(0deg);
+  transition: transform 0.25s ease;
+}
+.mailbox-btn:hover .flag { transform: rotate(-70deg); }
+.mailbox-btn .letter {
+  transform: translateY(0);
+  transition: transform 0.25s ease;
+}
+.mailbox-btn:hover .letter { transform: translateY(-4px); }
