@@ -1,14 +1,8 @@
 ﻿import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import { User, Mail, Lock, UserPlus } from "lucide-react";
 import { useAuth } from "../AuthContext";
-
-const ALLOWED = ["spu.ac.th", "spumail.net"];
-
-const box = { maxWidth: 380, margin: "80px auto", padding: 28, background: "#fff",
-  borderRadius: 20, boxShadow: "0 8px 30px rgba(99,102,241,.15)", display: "grid", gap: 12 };
-const input = { padding: "12px 14px", borderRadius: 12, border: "1px solid #d9d9f3", fontSize: 15 };
-const btn = { padding: 12, borderRadius: 12, border: "none", color: "#fff", fontSize: 16,
-  background: "linear-gradient(90deg,#6366f1,#7c6cf8)", cursor: "pointer" };
+import AuthLayout, { Field, celebrate } from "../components/AuthLayout";
 
 export default function Register() {
   const { register } = useAuth();
@@ -17,38 +11,48 @@ export default function Register() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [shake, setShake] = useState(0);
+  const [ok, setOk] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [done, setDone] = useState(false);
 
   async function handleSubmit(e) {
     e.preventDefault();
     setError("");
-    const domain = email.trim().toLowerCase().split("@")[1];
-    if (!ALLOWED.includes(domain)) {
-      setError("กรุณาใช้อีเมลมหาวิทยาลัยศรีปทุมเท่านั้น (@spu.ac.th หรือ @spumail.net)");
-      return;
-    }
+    setOk("");
+    setLoading(true);
     try {
-      await register(name, email, password);
-      alert("สมัครสำเร็จ! กรุณาเข้าสู่ระบบ");
-      navigate("/login");
+      await register(name.trim(), email.trim(), password);
+      setDone(true);
+      setOk("สมัครสมาชิกสำเร็จ กำลังพาไปหน้าเข้าสู่ระบบ...");
+      celebrate();
+      setTimeout(() => navigate("/login"), 1800);
     } catch (err) {
       setError(err.message);
+      setShake((k) => k + 1);
+    } finally {
+      setLoading(false);
     }
   }
 
   return (
-    <form onSubmit={handleSubmit} style={box}>
-      <h2 style={{ margin: 0 }}>สมัครสมาชิก</h2>
-      <input style={input} placeholder="ชื่อ-นามสกุล" value={name}
-        onChange={(e) => setName(e.target.value)} required />
-      <input style={input} type="email" placeholder="อีเมลมหาวิทยาลัยศรีปทุม (เช่น @spumail.net)"
-        value={email} onChange={(e) => setEmail(e.target.value)} required />
-      <input style={input} type="password" placeholder="รหัสผ่าน (อย่างน้อย 8 ตัว)"
-        value={password} onChange={(e) => setPassword(e.target.value)} required minLength={8} />
-      {error && <p style={{ color: "#e11d48", margin: 0 }}>{error}</p>}
-      <button style={btn} type="submit">สมัครสมาชิก</button>
-      <p style={{ margin: 0, textAlign: "center" }}>
-        มีบัญชีแล้ว? <Link to="/login">เข้าสู่ระบบ</Link> · <Link to="/">กลับหน้าหลัก</Link>
-      </p>
-    </form>
+    <AuthLayout badgeIcon={UserPlus} badge="สมัครสมาชิก">
+      <form onSubmit={handleSubmit}>
+        <Field icon={User} value={name} onChange={(e) => setName(e.target.value)}
+          placeholder="พิมพ์ ชื่อ-นามสกุล" autoComplete="name" />
+        <Field icon={Mail} type="email" value={email} onChange={(e) => setEmail(e.target.value)}
+          placeholder="อีเมลมหาวิทยาลัย (@spumail.net)" autoComplete="username" />
+        <Field icon={Lock} type="password" value={password} onChange={(e) => setPassword(e.target.value)}
+          placeholder="รหัสผ่าน (8 ตัวขึ้นไป)" autoComplete="new-password" minLength={8} />
+        {error && <p key={shake} className="auth-msg error" role="alert">{error}</p>}
+        {ok && <p className="auth-msg ok">{ok}</p>}
+        <button className="auth-submit" type="submit" disabled={loading || done}>
+          <UserPlus /> {loading ? "กำลังสมัคร..." : "สมัครสมาชิก"}
+        </button>
+      </form>
+      <div className="auth-or">หรือ</div>
+      <div className="auth-switch">มีบัญชีแล้ว? <Link to="/login">เข้าสู่ระบบ</Link></div>
+      <div className="auth-back"><Link to="/">กลับหน้าหลัก</Link></div>
+    </AuthLayout>
   );
 }

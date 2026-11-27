@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Routes, Route, Link, useNavigate } from "react-router-dom";
 import { Backpack, Bell, Search, User, ArrowUpDown, CircleCheck } from "lucide-react";
 import { getItems } from "./api";
+import HomeHero from "./components/HomeHero";
 import { socket } from "./socket";
 import { CATEGORIES, normalizeCategory } from "./categories";
 import { useAuth } from "./AuthContext";
@@ -155,6 +156,15 @@ function Home() {
         <main className="main">
           {(page === "home" || page === "lost" || page === "found") && (
             <>
+              {page === "home" && (
+                <HomeHero
+                  keyword={keyword}
+                  onKeyword={setKeyword}
+                  category={category}
+                  onCategory={setCategory}
+                  onReport={(t) => goTo("report", t)}
+                />
+              )}
               {page !== "home" && (
                 <MailboxButton
                   label={page === "lost" ? "แจ้งของหาย" : "แจ้งของเจอ"}
